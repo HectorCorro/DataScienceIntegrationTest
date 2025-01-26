@@ -7,7 +7,7 @@ trigger:
 - main
 
 pool:
-  vmImage: HecsMac
+  vmImage: 'Default'
 
 steps:
   - script: echo "Setting up Python environment"
