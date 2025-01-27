@@ -8,6 +8,11 @@ import os
 import zipfile
 from kaggle.api.kaggle_api_extended import KaggleApi
 
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from Cleaning.clean_datasets import DataClener
+
 app = func.FunctionApp()
 
 @app.route(route="DataProcessingFunction", auth_level=func.AuthLevel.ANONYMOUS)
@@ -48,6 +53,8 @@ def DataProcessingFunction(req: func.HttpRequest) -> func.HttpResponse:
         os.remove(zip_path)
         logging.info(f"ZIP file {zip_path} removed after extraction.")
 
+        cleaner = DataClener()
+
         # Mover solo los archivos deseados a la carpeta 'extracted_data'
         required_files = ["test_set.csv", "train_set.csv"]
         unwanted_files = ["sample_submission.csv"]  
@@ -56,7 +63,16 @@ def DataProcessingFunction(req: func.HttpRequest) -> func.HttpResponse:
         for file_name in required_files:
             file_path = os.path.join(parent_directory, file_name)
             if os.path.exists(file_path):
+                df = pd.read_csv(file_path)
+                ### modificar para limpieza
+                df = cleaner.cleaning_data(df)
+
+                if file_name == "train_set.csv":
+                    logging.info(f"Applying additional cleaning to {file_name}")
+                    df = df.dropna(subset=['passholder_type'])  # Eliminar filas con valores nulos en 'passholder_type'
+
                 target_path = os.path.join(extracted_data_dir, file_name)
+                df.to_csv(target_path, index=False)
                 os.rename(file_path, target_path)  # Mover archivo
                 extracted_files.append(file_name)
                 logging.info(f"Moved {file_name} to {extracted_data_dir}")
