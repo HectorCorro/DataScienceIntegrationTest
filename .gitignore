@@ -1,5 +1,11 @@
 __pycache__/
 *.pyc
+#Ignorar los folders resultantes de correr los métodos
 engineered_data/
 extracted_data/
 ml_results/
+# Ignorar archivos de cobertura de tests
+.coverage
+htmlcov/
+# Ignorar configuración de Flake8
+.flake8
