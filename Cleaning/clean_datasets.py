@@ -15,11 +15,18 @@ class DataClener:
 
         for col in geo_columns:
             if 'start' in col:
-                df[col] = df.groupby('start_station')[col].transform(lambda x: x.fillna(x.median()))
+                df[col] = df.groupby('start_station')[col].transform(
+                    lambda x: x.fillna(x.median()) if not x.median() is np.nan else x.fillna(0)
+                    )
             else:
-                df[col] = df.groupby('end_station')[col].transform(lambda x: x.fillna(x.median()))
+                df[col] = df.groupby('end_station')[col].transform(
+                    lambda x: x.fillna(x.median()) if not x.median() is np.nan else x.fillna(0)
+                    )
 
         for col in geo_columns:
-            df[col].fillna(df[col].median(), inplace=True)
+            if df[col].isnull().all():
+                df[col].fillna(0, inplace=True)
+            else:
+                df[col].fillna(df[col].median(), inplace=True)
 
         return df

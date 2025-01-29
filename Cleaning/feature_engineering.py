@@ -43,18 +43,27 @@ class FeatureEngineering:
             raise ValueError("La columna 'distance' no está en el DataFrame.")
 
         if self.strategy == 'mean':
-            df['distance'].fillna(df['distance'].mean(), inplace=True)
+            df['distance'] = df['distance'].fillna(df['distance'].mean())
         elif self.strategy == 'median':
-            df['distance'].fillna(df['distance'].median(), inplace=True)
+            df['distance'] = df['distance'].fillna(df['distance'].median())
         elif self.strategy == 'grouped_median':
             if 'start_station' not in df.columns:
                 raise ValueError("La columna 'start_station' no está en el DataFrame.")
-            # Imputar usando la mediana agrupada por estación
+            # Calcular las medianas por grupo
+            grouped_medians = df.groupby('start_station')['distance'].median()
+            print("Medianas por grupo:")
+            print(grouped_medians)
+
+            # Aplicar la mediana del grupo si existe
             df['distance'] = df.groupby('start_station')['distance'].transform(
-                lambda x: x.fillna(x.median())
+                lambda x: x.fillna(x.median()) if not pd.isna(x.median()) else x
             )
-            # Rellenar valores restantes con la mediana global
-            df['distance'].fillna(df['distance'].median(), inplace=True)
+
+            # Verificar si aún quedan valores NaN y aplicar la mediana global solo a esos valores
+            global_median = df['distance'].median()
+            print(f"Mediana global: {global_median}")
+
+            df['distance'] = df['distance'].fillna(global_median)
         else:
             raise ValueError(f"Estrategia desconocida: {self.strategy}")
         
