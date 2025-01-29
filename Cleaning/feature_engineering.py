@@ -3,11 +3,11 @@ import numpy as np
 
 class FeatureEngineering:
 
-    def __init__(self):
-        pass
+    def __init__(self, strategy='median'):
+        self.strategy = strategy
     
     def feature_engineering(self, df):
-    
+
         df['trip_duration_calculated'] = (df['end_time'] - df['start_time']).dt.total_seconds() / 60
         df['is_weekend'] = df['start_time'].dt.weekday >= 5
         
@@ -31,7 +31,33 @@ class FeatureEngineering:
 
         df['day_of_week'] = df['start_time'].dt.day_name()
 
+        return df
+    
+    def impute_distance(self, df):
+        """
+        Imputa valores faltantes en la columna 'distance'.
+        :param df: DataFrame a procesar.
+        :return: DataFrame con valores imputados en 'distance'.
+        """
+        if 'distance' not in df.columns:
+            raise ValueError("La columna 'distance' no está en el DataFrame.")
 
+        if self.strategy == 'mean':
+            df['distance'].fillna(df['distance'].mean(), inplace=True)
+        elif self.strategy == 'median':
+            df['distance'].fillna(df['distance'].median(), inplace=True)
+        elif self.strategy == 'grouped_median':
+            if 'start_station' not in df.columns:
+                raise ValueError("La columna 'start_station' no está en el DataFrame.")
+            # Imputar usando la mediana agrupada por estación
+            df['distance'] = df.groupby('start_station')['distance'].transform(
+                lambda x: x.fillna(x.median())
+            )
+            # Rellenar valores restantes con la mediana global
+            df['distance'].fillna(df['distance'].median(), inplace=True)
+        else:
+            raise ValueError(f"Estrategia desconocida: {self.strategy}")
+        
         return df
     
     def add_features(self, df):

@@ -6,3 +6,8 @@ azure-functions
 requests
 pandas
 kaggle
+scikit-learn
+imbalanced-learn
+matplotlib
+seaborn
+joblib
