@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import zipfile
+import shutil
 from kaggle.api.kaggle_api_extended import KaggleApi
 from sklearn.preprocessing import LabelEncoder
 
@@ -36,24 +37,25 @@ def DataProcessingFunction(req: func.HttpRequest) -> func.HttpResponse:
             )
 
         # Configurar rutas
-        repo_directory = os.path.dirname(os.path.abspath(__file__))  # Directorio actual
-        parent_directory = os.path.dirname(repo_directory)  # Un nivel arriba
-        extracted_data_dir = os.path.join(parent_directory, "extracted_data")  # Carpeta 'extracted_data'
+        #repo_directory = os.path.dirname(os.path.abspath(__file__))  # Directorio actual
+        #parent_directory = os.path.dirname(repo_directory)  # Un nivel arriba
+        BASE_DIR = os.getenv("BASE_DIR", os.path.dirname(os.path.abspath(__file__)))
+        extracted_data_dir = os.path.join(BASE_DIR, "extracted_data")  # Carpeta 'extracted_data'
         os.makedirs(extracted_data_dir, exist_ok=True)
 
         # Descargar los datos desde Kaggle
         logging.info(f"Downloading data from Kaggle competition: {kaggle_competition}")
-        zip_path = os.path.join(parent_directory, f"{kaggle_competition}.zip")  # Guardar ZIP afuera
+        zip_path = os.path.join(BASE_DIR, f"{kaggle_competition}.zip")  # Guardar ZIP afuera
 
         # Configurar y autenticar la API de Kaggle
         api = KaggleApi()
         api.authenticate()
-        api.competition_download_files(kaggle_competition, path=parent_directory)
+        api.competition_download_files(kaggle_competition, path=BASE_DIR)
 
         # Extraer los archivos del ZIP
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
-            zip_ref.extractall(parent_directory)
-        logging.info(f"Data extracted to {parent_directory}")
+            zip_ref.extractall(BASE_DIR)
+        logging.info(f"Data extracted to {BASE_DIR}")
 
         # Eliminar el archivo ZIP
         os.remove(zip_path)
@@ -67,7 +69,7 @@ def DataProcessingFunction(req: func.HttpRequest) -> func.HttpResponse:
 
         extracted_files = []
         for file_name in required_files:
-            file_path = os.path.join(parent_directory, file_name)
+            file_path = os.path.join(BASE_DIR, file_name)
             if os.path.exists(file_path):
 
                 df = pd.read_csv(file_path)
@@ -82,7 +84,9 @@ def DataProcessingFunction(req: func.HttpRequest) -> func.HttpResponse:
 
                 target_path = os.path.join(extracted_data_dir, file_name)
                 df.to_csv(target_path, index=False)
-                os.rename(file_path, target_path)  # Mover archivo
+                #os.rename(file_path, target_path)  # Mover archivo
+                shutil.copy2(file_path, target_path)  # Copia con metadata
+                os.remove(file_path)  # Luego eliminar el original
                 extracted_files.append(file_name)
                 logging.info(f"Moved {file_name} to {extracted_data_dir}")
             else:
@@ -93,7 +97,7 @@ def DataProcessingFunction(req: func.HttpRequest) -> func.HttpResponse:
         # Eliminar cualquier archivo no deseado en el directorio raíz
         # Eliminar archivos no deseados
         for file_name in unwanted_files:
-            file_path = os.path.join(parent_directory, file_name)
+            file_path = os.path.join(BASE_DIR, file_name)
             if os.path.exists(file_path):
                 os.remove(file_path)
                 logging.info(f"Removed unwanted file: {file_name}")
@@ -121,9 +125,10 @@ def MLPipelineFunction(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
         # Definir directorio donde están los datos procesados
-        repo_directory = os.path.dirname(os.path.abspath(__file__))
-        parent_directory = os.path.dirname(repo_directory)  # Un nivel arriba
-        extracted_data_dir = os.path.join(parent_directory, "extracted_data")
+        BASE_DIR = os.getenv("BASE_DIR", os.path.dirname(os.path.abspath(__file__)))
+        #repo_directory = os.path.dirname(os.path.abspath(__file__))
+        #parent_directory = os.path.dirname(BASE_DIR)  # Un nivel arriba
+        extracted_data_dir = os.path.join(BASE_DIR, "extracted_data")
 
         # Verificar que los archivos existan
         train_file_path = os.path.join(extracted_data_dir, "train_set.csv")
@@ -184,7 +189,7 @@ def MLPipelineFunction(req: func.HttpRequest) -> func.HttpResponse:
         data_train_cleaned_pre = cleaned_datasets["data_train"]
         data_test_cleaned_pre = cleaned_datasets["data_test"]
         
-        output_dir_data = os.path.join(parent_directory, "engineered_data")
+        output_dir_data = os.path.join(BASE_DIR, "engineered_data")
         os.makedirs(output_dir_data, exist_ok=True)
 
         # Guardar los datasets procesados
@@ -227,7 +232,7 @@ def MLPipelineFunction(req: func.HttpRequest) -> func.HttpResponse:
         y_test_rf = model_develop.predict_on_test_set(rf_model, X_test)
         y_test_rf_labels = le.inverse_transform(y_test_rf)
         logging.info("Saving predictions into csv...")
-        output_dir = os.path.join(parent_directory, "ml_results")
+        output_dir = os.path.join(BASE_DIR, "ml_results")
         os.makedirs(output_dir, exist_ok=True)
         predictions_df = pd.DataFrame({
             'trip_id': data_test_cleaned['trip_id'],

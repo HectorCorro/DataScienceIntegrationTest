@@ -9,6 +9,3 @@ kaggle
 scikit-learn
 imbalanced-learn
 joblib
-pytest
-flake8
-coverage

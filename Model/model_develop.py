@@ -90,7 +90,8 @@ class ModelDevelop:
         X_train_balanced, y_train_balanced = self.balance_data(X_train, y_train)
 
         print("\n[Random Forest - Validación Cruzada]")
-        rf_model = self.grid_search_rf(X_train_balanced, y_train_balanced)
+        #rf_model = self.grid_search_rf(X_train_balanced, y_train_balanced)
+        rf_model = self.grid_search_rf_sampled(X_train_balanced, y_train_balanced)
         kf = KFold(n_splits=5, shuffle=True, random_state=42)
         rf_cv_scores = cross_val_score(rf_model, X_train, y_train, cv=kf, scoring='accuracy')
         print(f"[Random Forest] Accuracy promedio CV: {np.mean(rf_cv_scores):.4f} ± {np.std(rf_cv_scores):.4f}")
