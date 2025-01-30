@@ -9,16 +9,65 @@ trigger:
 pool:
   name: 'Default'
 
+variables:
+  pythonVersion: '3.12'  # Ajusta según la versión de Python que uses
+
 steps:
-  - script: echo "Setting up Python environment"
-    displayName: 'Setup Environment'
+  # Configurar Python y entorno virtual
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.x'
+      versionSpec: '$(pythonVersion)'
+
   - script: |
       python -m venv env
       source env/bin/activate
-      pip install -r requirements.txt || echo "No dependencies to install"
-    displayName: 'Install dependencies'
-  - script: echo "Running tests (if any)"
-    displayName: 'Run Tests'
+      pip install -r requirements.txt
+    displayName: 'Setup Python Environment'
+
+  # Ejecutar pruebas unitarias y generar reporte de cobertura
+  - script: |
+      source env/bin/activate
+      pytest --cov=./ --cov-report=xml
+    displayName: 'Run Unit Tests with Coverage'
+
+  # Ejecutar linter (flake8)
+  - script: |
+      source env/bin/activate
+      flake8 . --max-line-length=120 || echo "Linter completed with warnings"
+    displayName: 'Run Linter (flake8)'
+
+  # Guardar resultados del reporte de cobertura
+  - task: PublishCodeCoverageResults@1
+    inputs:
+      codeCoverageTool: 'Cobertura'
+      summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage.xml'
+
+  # Probar funciones de Azure localmente
+  - script: |
+      curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
+      sudo mv microsoft.gpg /etc/apt/trusted.gpg.d/microsoft.gpg
+      sudo sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/azure-cli.list'
+      sudo apt-get update
+      sudo apt-get install azure-functions-core-tools-4
+    displayName: 'Install Azure Functions Core Tools'
+
+  - script: |
+      cd azure_func_data_processing
+      func start &
+      sleep 10  # Dar tiempo para que las funciones se inicien
+      curl -X POST -H "Content-Type: application/json" -d '{
+          "kaggle_competition": "ds-programming-test"
+      }' http://localhost:7071/api/DataProcessingFunction
+      curl -X POST -H "Content-Type: application/json" -d '{}' http://localhost:7071/api/MLPipelineFunction
+    displayName: 'Run Azure Functions Locally'
+
+  - script: |
+      pkill -f 'func start'
+    displayName: 'Stop Azure Functions'
+
+  # Generar reporte de artefactos
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: '$(System.DefaultWorkingDirectory)'
+      artifactName: 'PipelineOutputs'
+      publishLocation: 'pipeline'
