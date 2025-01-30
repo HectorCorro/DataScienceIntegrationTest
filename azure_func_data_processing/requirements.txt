@@ -8,8 +8,6 @@ pandas
 kaggle
 scikit-learn
 imbalanced-learn
-matplotlib
-seaborn
 joblib
 pytest
 flake8
