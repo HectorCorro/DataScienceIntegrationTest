@@ -125,10 +125,9 @@ def MLPipelineFunction(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
         # Definir directorio donde están los datos procesados
-        BASE_DIR = os.getenv("BASE_DIR", os.path.dirname(os.path.abspath(__file__)))
-        #repo_directory = os.path.dirname(os.path.abspath(__file__))
-        #parent_directory = os.path.dirname(BASE_DIR)  # Un nivel arriba
-        extracted_data_dir = os.path.join(BASE_DIR, "extracted_data")
+        repo_directory = os.path.dirname(os.path.abspath(__file__))
+        parent_directory = os.path.dirname(repo_directory)  # Un nivel arriba
+        extracted_data_dir = os.path.join(parent_directory, "extracted_data")
 
         # Verificar que los archivos existan
         train_file_path = os.path.join(extracted_data_dir, "train_set.csv")
@@ -157,15 +156,9 @@ def MLPipelineFunction(req: func.HttpRequest) -> func.HttpResponse:
         print(data_train.dtypes)
         print(data_test.dtypes)
 
-
         # Ingeniería de características
         logging.info("Applying feature engineering...")
         feature_eng = FeatureEngineering(strategy='grouped_median')
-        #data_train_cleaned_pre = feature_eng.feature_engineering(data_train)
-        #data_test_cleaned_pre = feature_eng.feature_engineering(data_test)
-        #data_train_cleaned_pre = feature_eng.impute_distance(data_train)
-        #data_test_cleaned_pre = feature_eng.impute_distance(data_test)
-
         datasets = {
             "data_train": data_train,
             "data_test": data_test,
@@ -189,7 +182,7 @@ def MLPipelineFunction(req: func.HttpRequest) -> func.HttpResponse:
         data_train_cleaned_pre = cleaned_datasets["data_train"]
         data_test_cleaned_pre = cleaned_datasets["data_test"]
         
-        output_dir_data = os.path.join(BASE_DIR, "engineered_data")
+        output_dir_data = os.path.join(parent_directory, "engineered_data")
         os.makedirs(output_dir_data, exist_ok=True)
 
         # Guardar los datasets procesados
@@ -232,7 +225,7 @@ def MLPipelineFunction(req: func.HttpRequest) -> func.HttpResponse:
         y_test_rf = model_develop.predict_on_test_set(rf_model, X_test)
         y_test_rf_labels = le.inverse_transform(y_test_rf)
         logging.info("Saving predictions into csv...")
-        output_dir = os.path.join(BASE_DIR, "ml_results")
+        output_dir = os.path.join(parent_directory, "ml_results")
         os.makedirs(output_dir, exist_ok=True)
         predictions_df = pd.DataFrame({
             'trip_id': data_test_cleaned['trip_id'],

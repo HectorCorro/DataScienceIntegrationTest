@@ -19,7 +19,7 @@ class ModelDevelop:
     def __init__(self):
         pass
 
-    def balance_data(self, X, y):
+    def balance_data(self, X, y): 
         smote = SMOTE(random_state=42)
         X_smote, y_smote = smote.fit_resample(X, y)
         under_sampler = RandomUnderSampler(random_state=42)

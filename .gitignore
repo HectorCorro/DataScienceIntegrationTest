@@ -3,7 +3,7 @@ __pycache__/
 #Ignorar los folders resultantes de correr los métodos
 engineered_data/
 extracted_data/
-ml_results/
+ml_results/*.pkl
 # Ignorar archivos de cobertura de tests
 .coverage
 htmlcov/
