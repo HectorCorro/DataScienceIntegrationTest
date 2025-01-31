@@ -16,10 +16,25 @@ import json
 
 class ModelDevelop:
     
+    """
+    Clase para desarrollar modelos de machine learning, incluyendo balanceo de datos,
+    selección de características, optimización de hiperparámetros y evaluación de desempeño.
+    """
+
     def __init__(self):
         pass
 
     def balance_data(self, X, y): 
+        """
+        Balancea los datos aplicando primero sobremuestreo con SMOTE y luego submuestreo.
+        
+        Args:
+            X (pd.DataFrame): Conjunto de características.
+            y (pd.Series): Etiquetas de clase.
+        
+        Returns:
+            tuple: Conjunto de características y etiquetas balanceadas.
+        """
         smote = SMOTE(random_state=42)
         X_smote, y_smote = smote.fit_resample(X, y)
         under_sampler = RandomUnderSampler(random_state=42)
@@ -27,12 +42,32 @@ class ModelDevelop:
         return X_balanced, y_balanced
 
     def train_test_split_df(self, X_train, y_train):
+        """
+        Divide el conjunto de entrenamiento en subconjuntos de entrenamiento interno y validación.
+        
+        Args:
+            X_train (pd.DataFrame): Conjunto de características de entrenamiento.
+            y_train (pd.Series): Etiquetas de entrenamiento.
+        
+        Returns:
+            tuple: Datos de entrenamiento interno y validación.
+        """
         X_train_internal, X_val, y_train_internal, y_val = train_test_split(
             X_train, y_train, test_size=0.2, random_state=42, stratify=y_train
         )
         return X_train_internal, X_val, y_train_internal, y_val
     
     def select_features_with_model(self, X, y):
+        """
+        Selecciona características utilizando un modelo RandomForestClassifier.
+        
+        Args:
+            X (pd.DataFrame): Conjunto de características.
+            y (pd.Series): Etiquetas de clase.
+        
+        Returns:
+            tuple: Conjunto de características seleccionadas y nombres de las características seleccionadas.
+        """
         model_temp = RandomForestClassifier(random_state=42)
         model_temp.fit(X, y)
         selector = SelectFromModel(model_temp, prefit=True, threshold="mean")
@@ -41,6 +76,16 @@ class ModelDevelop:
         return X_selected, selected_features
     
     def grid_search_rf(self, X, y):
+        """
+        Realiza una búsqueda en malla para optimizar hiperparámetros de RandomForestClassifier.
+        
+        Args:
+            X (pd.DataFrame): Conjunto de características.
+            y (pd.Series): Etiquetas de clase.
+        
+        Returns:
+            RandomForestClassifier: Modelo con los mejores hiperparámetros encontrados.
+        """
         print("\n[Optimized Search - Random Forest]")
         param_grid = {
             'n_estimators': [50, 100],
@@ -85,8 +130,19 @@ class ModelDevelop:
 
 
     def train_and_evaluate_models(self, X_train, y_train, X_val, y_val, le):
-        # 3.1 Validación cruzada para Random Forest
-        #le = LabelEncoder()
+        """
+        Entrena y evalúa un modelo RandomForestClassifier con validación cruzada y en el conjunto de validación.
+        
+        Args:
+            X_train (pd.DataFrame): Conjunto de características de entrenamiento.
+            y_train (pd.Series): Etiquetas de entrenamiento.
+            X_val (pd.DataFrame): Conjunto de características de validación.
+            y_val (pd.Series): Etiquetas de validación.
+            le (LabelEncoder): Codificador de etiquetas para interpretación del reporte de clasificación.
+        
+        Returns:
+            RandomForestClassifier: Modelo entrenado.
+        """
         X_train_balanced, y_train_balanced = self.balance_data(X_train, y_train)
 
         print("\n[Random Forest - Validación Cruzada]")
@@ -102,12 +158,6 @@ class ModelDevelop:
         print("\n[Evaluación en Validación Interna - Random Forest]")
         print("Accuracy:", accuracy_score(y_val, y_val_pred_rf))
         print("Classification Report:\n", classification_report(y_val, y_val_pred_rf, target_names=le.classes_))
-
-        #conf_matrix_rf = confusion_matrix(y_val, y_val_pred_rf)
-        #disp_rf = ConfusionMatrixDisplay(confusion_matrix=conf_matrix_rf, display_labels=le.classes_)
-        #disp_rf.plot(cmap='viridis')
-        #plt.title("Random Forest - Matriz de Confusión")
-        #plt.show()
 
         return rf_model
     
@@ -131,7 +181,18 @@ class ModelDevelop:
             raise
 
     def get_model_metrics(self, model, X_val, y_val, le):
-        """Calcula y devuelve métricas del modelo en formato JSON."""
+        """
+        Calcula y devuelve métricas del modelo en formato JSON.
+        
+        Args:
+            model (RandomForestClassifier): Modelo entrenado.
+            X_val (pd.DataFrame): Conjunto de características de validación.
+            y_val (pd.Series): Etiquetas de validación.
+            le (LabelEncoder): Codificador de etiquetas.
+        
+        Returns:
+            dict: Diccionario con métricas del modelo.
+        """
         y_pred = model.predict(X_val)
 
         # Cálculo de métricas
@@ -151,8 +212,10 @@ class ModelDevelop:
     def save_model(self, model, path):
         """
         Guarda un modelo en un archivo.
-        :param model: Modelo entrenado (ej., RandomForestClassifier).
-        :param path: Ruta donde se guardará el modelo.
+        
+        Args:
+            model: Modelo entrenado.
+            path (str): Ruta donde se guardará el modelo.
         """
         try:
             joblib.dump(model, path)
@@ -162,6 +225,16 @@ class ModelDevelop:
     
     
     def feature_importance(self, model, feature_names):
+        """
+        Calcula la importancia de las características en el modelo.
+        
+        Args:
+            model: Modelo entrenado con feature_importances_.
+            feature_names (list): Lista de nombres de las características.
+        
+        Returns:
+            pd.DataFrame: DataFrame con la importancia de cada característica.
+        """
         importances = model.feature_importances_
         importance_df = pd.DataFrame({
             'Feature': feature_names,

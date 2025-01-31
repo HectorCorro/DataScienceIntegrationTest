@@ -1,7 +1,7 @@
 # Imagen base de Azure Functions con Python 3.12
 FROM mcr.microsoft.com/azure-functions/python:4-python3.12
 
-# Establecer el directorio de trabajo dentro del contenedor
+# Establecer directorio de trabajo
 WORKDIR /home/site/wwwroot
 
 # Instalar Azure Functions Core Tools en Debian

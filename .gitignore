@@ -9,3 +9,4 @@ ml_results/*.pkl
 htmlcov/
 # Ignorar configuración de Flake8
 .flake8
+.DS_Store

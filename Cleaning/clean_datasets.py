@@ -2,15 +2,24 @@ import pandas as pd
 import numpy as np
 
 class DataClener:
+    """
+    Clase para limpiar datos, incluyendo el manejo de valores nulos en columnas geográficas.
+    """
 
     def __init__(self):
         pass
 
     def cleaning_data(self, df):
-
-        #df['start_time'] = df['start_time'].apply(parse_dates)
-        #df['end_time'] = df['end_time'].apply(parse_dates)
-
+        """
+        Limpia los datos reemplazando valores nulos en coordenadas geográficas
+        con la mediana del grupo correspondiente o con 0 si no hay valores disponibles.
+        
+        Args:
+            df (pd.DataFrame): DataFrame con datos a limpiar.
+        
+        Returns:
+            pd.DataFrame: DataFrame con valores limpios en columnas geográficas.
+        """
         geo_columns = ['start_lat', 'start_lon', 'end_lat', 'end_lon']
 
         for col in geo_columns:

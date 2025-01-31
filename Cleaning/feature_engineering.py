@@ -7,7 +7,11 @@ class FeatureEngineering:
         self.strategy = strategy
     
     def feature_engineering(self, df):
-
+        """
+        Crea variables de tiempo como duración del viaje, fines de semana, variables de distancia y binning horario.
+        :param df: DataFrame a procesar.
+        :return: DataFrame con variables extra generadas para modelar fenómenos de viaje.
+        """
         df['trip_duration_calculated'] = (df['end_time'] - df['start_time']).dt.total_seconds() / 60
         df['is_weekend'] = df['start_time'].dt.weekday >= 5
         
@@ -70,6 +74,11 @@ class FeatureEngineering:
         return df
     
     def add_features(self, df):
+        """
+        Este método permite escribir la lógica de más features o variables que puedan hacer sentido al negocio.
+        :param: Dataframe a procesar.
+        :return: DataFrame con variables extra'.
+        """
         # Promedio de duración de viajes por estación de inicio
         df['avg_trip_duration_by_station'] = df.groupby('start_station')['trip_duration_calculated'].transform('mean')
         # Interacciones entre variables
